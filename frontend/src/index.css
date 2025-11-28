@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+body {
+  background-color: #f3f4f6;
+}
+
+/* Styles pour la visualisation des différences */
+ins {
+  background-color: #e6ffe6;
+  text-decoration: none;
+  border-bottom: 2px solid #00cc00;
+  color: #005c00;
+}
+
+del {
+  background-color: #ffe6e6;
+  text-decoration: line-through;
+  color: #cc0000;
+}

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+pdfplumber
+diff-match-patch
+reportlab
+pypdfium2
+Pillow
