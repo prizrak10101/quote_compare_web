@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FileUpload } from './components/FileUpload';
+import { useState, useEffect } from 'react';
+import { VersionManager } from './components/VersionManager';
 import { DiffViewer } from './components/DiffViewer';
 import { VisualDiffViewer } from './components/VisualDiffViewer';
 
@@ -15,25 +15,83 @@ interface DiffResult {
   filename2: string;
 }
 
+interface Version {
+  filename: string;
+  path: string;
+  size: number;
+  created: number;
+  modified: number;
+}
+
 function App() {
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
+  const [versions, setVersions] = useState<Version[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'text' | 'visual'>('visual');
 
-  const handleCompare = async (file1: File, file2: File) => {
+  const API_URL = 'http://localhost:8000';
+
+  const fetchVersions = async () => {
+    try {
+      const res = await fetch(`${API_URL}/versions`);
+      if (res.ok) {
+        const data = await res.json();
+        setVersions(data);
+      }
+    } catch (err) {
+      console.error("Erreur chargement versions", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchVersions();
+  }, []);
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error("Erreur upload");
+      await fetchVersions();
+    } catch (err) {
+      setError("Erreur lors de l'upload du fichier");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer toutes les versions ?")) return;
+    try {
+      await fetch(`${API_URL}/reset`, { method: 'POST' });
+      setVersions([]);
+      setDiffResult(null);
+    } catch (err) {
+      setError("Erreur lors de la réinitialisation");
+    }
+  };
+
+  const handleCompare = async (file1: string, file2: string) => {
     setIsLoading(true);
     setError(null);
     setDiffResult(null);
 
-    const formData = new FormData();
-    formData.append('file1', file1);
-    formData.append('file2', file2);
-
     try {
-      const response = await fetch('http://localhost:8001/compare', {
+      const response = await fetch(`${API_URL}/compare-versions`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ file1, file2 }),
       });
 
       if (!response.ok) {
@@ -53,21 +111,35 @@ function App() {
     <div className="min-h-screen p-4 md:p-8 bg-gray-50">
       <header className="mb-10 text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-blue-900">Comparateur de Devis</h1>
-        <p className="text-gray-600 mt-2">Visualisez les évolutions de vos devis fournisseurs</p>
+        <p className="text-gray-600 mt-2">Gérez vos versions et visualisez les évolutions</p>
       </header>
 
-      <div className="flex flex-col items-center gap-8">
-        <FileUpload onCompare={handleCompare} isLoading={isLoading} />
+      <div className="flex flex-col items-center gap-8 max-w-6xl mx-auto">
+        
+        <VersionManager 
+            versions={versions}
+            onUpload={handleUpload}
+            onCompare={handleCompare}
+            onReset={handleReset}
+            isUploading={isUploading}
+        />
 
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 w-full max-w-2xl" role="alert">
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 w-full" role="alert">
             <p className="font-bold">Erreur</p>
             <p>{error}</p>
           </div>
         )}
 
-        {diffResult && (
-          <div className="w-full animate-fade-in px-4">
+        {isLoading && (
+            <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-600">Analyse et comparaison en cours...</p>
+            </div>
+        )}
+
+        {diffResult && !isLoading && (
+          <div className="w-full animate-fade-in">
             <div className="flex justify-center gap-4 mb-6">
               <button
                 onClick={() => setViewMode('visual')}
@@ -105,15 +177,6 @@ function App() {
                 fileName2={diffResult.filename2}
               />
             )}
-
-            <div className="text-center mt-12 mb-8">
-              <button 
-                onClick={() => setDiffResult(null)}
-                className="text-blue-600 hover:text-blue-800 underline font-medium"
-              >
-                Effectuer une nouvelle comparaison
-              </button>
-            </div>
           </div>
         )}
       </div>
