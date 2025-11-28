@@ -31,7 +31,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'text' | 'visual'>('visual');
 
-  const API_URL = 'http://localhost:8000';
+  const API_URL = 'http://localhost:8001';
 
   const fetchVersions = async () => {
     try {
