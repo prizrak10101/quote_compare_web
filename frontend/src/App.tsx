@@ -108,77 +108,91 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-background text-foreground">
-      <header className="mb-10 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-primary">Comparateur de Devis</h1>
-        <p className="text-muted-foreground mt-2">Gérez vos versions et visualisez les évolutions</p>
-      </header>
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+      {/* Sidebar de Versioning */}
+      <VersionManager 
+        versions={versions}
+        onUpload={handleUpload}
+        onCompare={handleCompare}
+        onReset={handleReset}
+        isUploading={isUploading}
+      />
 
-      <div className="flex flex-col items-center gap-8 max-w-6xl mx-auto">
-        
-        <VersionManager 
-            versions={versions}
-            onUpload={handleUpload}
-            onCompare={handleCompare}
-            onReset={handleReset}
-            isUploading={isUploading}
-        />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="p-6 border-b border-border bg-card shadow-sm flex-shrink-0">
+          <h1 className="text-2xl font-bold text-primary">Comparateur de Devis</h1>
+          <p className="text-muted-foreground text-sm mt-1">Gérez vos versions et visualisez les évolutions</p>
+        </header>
 
-        {error && (
-          <div className="bg-destructive/15 border-l-4 border-destructive text-destructive p-4 w-full" role="alert">
-            <p className="font-bold">Erreur</p>
-            <p>{error}</p>
-          </div>
-        )}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-muted/10">
+          <div className="max-w-6xl mx-auto">
+            
+            {error && (
+              <div className="bg-destructive/15 border-l-4 border-destructive text-destructive p-4 mb-6 w-full" role="alert">
+                <p className="font-bold">Erreur</p>
+                <p>{error}</p>
+              </div>
+            )}
 
-        {isLoading && (
-            <div className="flex flex-col items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                <p className="text-muted-foreground">Analyse et comparaison en cours...</p>
-            </div>
-        )}
+            {isLoading && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                    <p className="text-muted-foreground">Analyse et comparaison en cours...</p>
+                </div>
+            )}
 
-        {diffResult && !isLoading && (
-          <div className="w-full animate-fade-in">
-            <div className="flex justify-center gap-4 mb-6">
-              <button
-                onClick={() => setViewMode('visual')}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  viewMode === 'visual'
-                    ? 'bg-primary text-primary-foreground shadow-lg'
-                    : 'bg-card text-muted-foreground hover:bg-muted border border-border'
-                }`}
-              >
-                Vue Visuelle (Images)
-              </button>
-              <button
-                onClick={() => setViewMode('text')}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  viewMode === 'text'
-                    ? 'bg-primary text-primary-foreground shadow-lg'
-                    : 'bg-card text-muted-foreground hover:bg-muted border border-border'
-                }`}
-              >
-                Vue Texte (Détails)
-              </button>
-            </div>
+            {!diffResult && !isLoading && (
+              <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground">
+                <div className="text-6xl mb-4 opacity-20">📄</div>
+                <p className="text-lg">Sélectionnez deux versions dans la barre latérale</p>
+                <p className="text-sm mt-2">puis cliquez sur "Comparer"</p>
+              </div>
+            )}
 
-            {viewMode === 'visual' ? (
-              <VisualDiffViewer 
-                visualDiff={diffResult.visual_diff}
-                fileName1={diffResult.filename1}
-                fileName2={diffResult.filename2}
-              />
-            ) : (
-              <DiffViewer 
-                htmlDiff={diffResult.html_diff}
-                rawDiff={diffResult.raw_diff}
-                fileName1={diffResult.filename1}
-                fileName2={diffResult.filename2}
-              />
+            {diffResult && !isLoading && (
+              <div className="w-full animate-fade-in">
+                <div className="flex justify-center gap-4 mb-6">
+                  <button
+                    onClick={() => setViewMode('visual')}
+                    className={`px-6 py-2 rounded-full font-medium transition-all ${
+                      viewMode === 'visual'
+                        ? 'bg-primary text-primary-foreground shadow-lg'
+                        : 'bg-card text-muted-foreground hover:bg-muted border border-border'
+                    }`}
+                  >
+                    Vue Visuelle (Images)
+                  </button>
+                  <button
+                    onClick={() => setViewMode('text')}
+                    className={`px-6 py-2 rounded-full font-medium transition-all ${
+                      viewMode === 'text'
+                        ? 'bg-primary text-primary-foreground shadow-lg'
+                        : 'bg-card text-muted-foreground hover:bg-muted border border-border'
+                    }`}
+                  >
+                    Vue Texte (Détails)
+                  </button>
+                </div>
+
+                {viewMode === 'visual' ? (
+                  <VisualDiffViewer 
+                    visualDiff={diffResult.visual_diff}
+                    fileName1={diffResult.filename1}
+                    fileName2={diffResult.filename2}
+                  />
+                ) : (
+                  <DiffViewer 
+                    htmlDiff={diffResult.html_diff}
+                    rawDiff={diffResult.raw_diff}
+                    fileName1={diffResult.filename1}
+                    fileName2={diffResult.filename2}
+                  />
+                )}
+              </div>
             )}
           </div>
-        )}
+        </main>
       </div>
     </div>
   );
